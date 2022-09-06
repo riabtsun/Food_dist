@@ -50,10 +50,10 @@ window.addEventListener('DOMContentLoaded', () => {
       minutes = 0;
       seconds = 0;
     } else {
-      days = Math.floor(t / (1000 * 60 * 60 * 24)),
-        hours = Math.floor((t / (1000 * 60 * 600) % 24)),
-        minutes = Math.floor((t / 100 / 60) % 60),
-        seconds = Math.floor((t / 1000) % 60);
+      days = Math.floor(t / (1000 * 60 * 60 * 24));
+      hours = Math.floor((t / (1000 * 60 * 600) % 24));
+      minutes = Math.floor((t / 100 / 60) % 60);
+      seconds = Math.floor((t / 1000) % 60);
     }
     return {
       'total': t,
@@ -144,12 +144,13 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', showModalByScroll);
 
   class MenuCard {
-    constructor(src, alt, title, text, price, parentSelector) {
+    constructor(src, alt, title, text, price, parentSelector, ...classes) {
       this.src = src;
       this.alt = alt;
       this.title = title;
       this.text = text;
       this.price = price;
+      this.classes = classes;
       this.parent = document.querySelector(parentSelector);
       this.transfer = 40;
       this.changeToUAH();
@@ -161,17 +162,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
     renderMenuItem() {
       const menuItem = document.createElement('div');
+      if (this.classes.length === 0) {
+        this.element = 'menu__item';
+        menuItem.classList.add(this.element);
+      } else {
+        this.classes.forEach(className => menuItem.classList.add(className));
+      }
 
-      menuItem.classList.add('menu__item');
-
-      menuItem.innerHTML = `<img src=${this.src} alt=${this.alt}>
-                <h3 class="menu__item-subtitle">${this.title}</h3>
-                <div class="menu__item-descr">${this.text}</div>
-                <div class="menu__item-divider"></div>
-                <div class="menu__item-price">
-                    <div class="menu__item-cost">Цена:</div>
-                    <div class="menu__item-total"><span>${this.price}</span> грн/день</div>
-                </div>`;
+      menuItem.innerHTML = `
+          <img src=${this.src} alt=${this.alt}>
+          <h3 class="menu__item-subtitle">${this.title}</h3>
+          <div class="menu__item-descr">${this.text}</div>
+          <div class="menu__item-divider"></div>
+          <div class="menu__item-price">
+              <div class="menu__item-cost">Цена:</div>
+              <div class="menu__item-total"><span>${this.price}</span> грн/день</div>
+          </div>`;
       this.parent.append(menuItem);
     }
 
@@ -184,7 +190,8 @@ window.addEventListener('DOMContentLoaded', () => {
     'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. ' +
     'Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
     9,
-    '.menu__field .container'
+    '.menu__field .container',
+    'menu__item'
   ).renderMenuItem();
 
   new MenuCard(
@@ -194,7 +201,8 @@ window.addEventListener('DOMContentLoaded', () => {
     'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. ' +
     'Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
     12,
-    '.menu__field .container'
+    '.menu__field .container',
+    'menu__item'
   ).renderMenuItem();
 
   new MenuCard(
@@ -205,10 +213,60 @@ window.addEventListener('DOMContentLoaded', () => {
     'продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество' +
     'белков за счет тофу и импортных вегетарианских стейков.',
     8,
-    '.menu__field .container'
+    '.menu__field .container',
+    'menu__item'
   ).renderMenuItem();
+
+  // Forms
+
+  const forms = document.querySelectorAll('form');
+
+  const message = {
+    loading: 'Загрузка',
+    success: 'Спасибо! Мы скоро с вами свяжемся.',
+    failure: 'Что-то пошло не так'
+  };
+
+  forms.forEach(item => {
+    postData(item);
+  });
+
+  function postData(form) {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const statusMessage = document.createElement('div');
+      statusMessage.classList.add('status');
+      statusMessage.textContent = message.loading;
+      form.append(statusMessage);
+
+      const request = new XMLHttpRequest();
+      request.open('POST', 'server.php');
+
+      request.setRequestHeader('Content-type', 'application/json');
+
+      const formData = new FormData(form);
+      const object = {};
+      formData.forEach(function (value, key) {
+        object[key] = value;
+      });
+      const json = JSON.stringify(object);
+
+      request.send(json);
+
+      request.addEventListener('load', () => {
+        if (request.status === 200) {
+          console.log(request.response);
+          statusMessage.textContent = message.success;
+          form.reset();
+          setTimeout(() => {
+            statusMessage.remove();
+          }, 2000);
+        } else {
+          statusMessage.textContent = message.failure;
+        }
+      });
+    });
+
+  }
 });
-
-
-
-
